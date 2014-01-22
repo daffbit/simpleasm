@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/new/icons">
+        <file>icons/build.png</file>
+        <file>icons/debug.png</file>
+        <file>icons/exit.png</file>
+        <file>icons/info.png</file>
+        <file>icons/run.png</file>
+        <file>icons/save.png</file>
+        <file>icons/simpleASM.png</file>
+    </qresource>
+</RCC>
