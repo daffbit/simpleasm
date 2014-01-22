@@ -1,0 +1,5 @@
+DEPLOYING
+	WINDOWS:
+ 	   copy to executable folder tasm, asmlist folders and hello.asm, dosbox.exe files
+	LINUX:
+	   copy to executable folder tasm, asmlist folders and hello.asm file
