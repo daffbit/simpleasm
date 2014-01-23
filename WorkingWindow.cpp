@@ -9,6 +9,7 @@
 #include <InfoDialog.h>
 #include <cstring>
 #include <QIcon>
+#include <QDebug>
 
 #ifdef Q_OS_LINUX
 #define DOSBOXCONST "dosbox"
@@ -26,7 +27,6 @@ WorkingWindow::WorkingWindow(QString p,QWidget *parent) :
     currentProject = p;
     // setup ui
     ui->setupUi(this);
-
     // init SQLITE driver
     asmlist = QSqlDatabase::addDatabase("QSQLITE");
 
@@ -55,8 +55,8 @@ WorkingWindow::WorkingWindow(QString p,QWidget *parent) :
 
     /* args start */
     // default arguments for all execution modes
-    defaultArgs << "-noautoexec"  << "-c" << "mount C \""+ QCoreApplication::applicationDirPath()
-                << "\"" << "-c" << "C:" // mounted to C and changed current device to C:
+    defaultArgs << "-noautoexec"  << "-c" << "mount C \""+ QDir::toNativeSeparators(QCoreApplication::applicationDirPath())
+                + "\"" << "-c" << "C:" // mounted to C and changed current device to C:
                 << "-c"
                 << tasmDir + "tasm.exe /z "+ projDir + "main.asm " + projDir
                 + "main.OBJ > OUTPUT.TXT"
@@ -69,7 +69,7 @@ WorkingWindow::WorkingWindow(QString p,QWidget *parent) :
     //init newFork process
     newFork = new QProcess;
     // init main file of project
-    QFile mainFile("projects/"+currentProject+"/main.asm");
+    QFile mainFile(QDir::toNativeSeparators("projects/"+currentProject+"/main.asm"));
     // line - temp var for writing into input textBox
     QString line;
     // if exists just open needed file
@@ -117,13 +117,7 @@ void WorkingWindow::on_commandSearch_editingFinished(){
     // initialize name
 
     QDir::setCurrent(QCoreApplication::applicationDirPath());
-#ifdef Q_OS_WIN32
-    asmlist.setDatabaseName("asmlist\asmlist.sqlite");
-#endif
-
-#ifdef Q_OS_LINUX
-    asmlist.setDatabaseName("asmlist/asmlist.sqlite");
-#endif
+    asmlist.setDatabaseName(QDir::toNativeSeparators("asmlist/asmlist.sqlite"));
 
     bool db_open = asmlist.open();
     if(!db_open)
@@ -153,7 +147,7 @@ void WorkingWindow::saveInput(){
         ui->saveButton->setDisabled(true);
         return;
     }
-    QFile file("projects/"+currentProject+"/main.asm");
+    QFile file(QDir::toNativeSeparators("projects/"+currentProject+"/main.asm"));
     file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);
     file.write(ui->input->document()->toPlainText().toStdString().c_str());
     file.close();
@@ -168,7 +162,7 @@ void WorkingWindow::executeMode(int job){
     saveInput();
 
     // remove old object file
-    QFile objFile("projects/"+currentProject+"/MAIN.OBJ");
+    QFile objFile(QDir::toNativeSeparators("projects/"+currentProject+"/MAIN.OBJ"));
     objFile.remove();
 
     // load args to change
@@ -177,7 +171,7 @@ void WorkingWindow::executeMode(int job){
     // if job == 0 just build and link
 
      if(job == 1){ // execution job
-        QFile executable("projects/" + currentProject + "/MAIN.EXE");
+        QFile executable(QDir::toNativeSeparators("projects/" + currentProject + "/MAIN.EXE"));
         // if execution file exist -> add execution command to args
         if(executable.exists())
             args << "-c"
@@ -187,7 +181,7 @@ void WorkingWindow::executeMode(int job){
 
     // debuging job
     else if(job == 2){
-        QFile executable("projects/" + currentProject + "/MAIN.EXE");
+        QFile executable(QDir::toNativeSeparators("projects/" + currentProject + "/MAIN.EXE"));
         // if execution file exists -> add debug command to args
         if(executable.exists())
             args << "-c"
@@ -196,13 +190,16 @@ void WorkingWindow::executeMode(int job){
 
     // exit when finished
     args << "-c" << "exit";
+
+
     // start execution
     newFork->start(dosbox, args);
     // waiting for finish
     // newFork->waitForFinished(-1);
     // close process
     // newFork->close();
-    // read output from OUTPUT.EXE
+    // qDebug() << newFork->nativeArguments();
+    // read output from OUTPUT.TXT
     QFile res("OUTPUT.TXT");
     res.open(QIODevice::ReadOnly | QIODevice::Text);
     QTextStream stream(&res);
@@ -215,7 +212,7 @@ void WorkingWindow::executeMode(int job){
         ui->output->append(line);
     }
     res.close();
-    // truncate OUTPUT.EXE
+    // truncate OUTPUT.TXT
     res.resize(0);
 
 }
